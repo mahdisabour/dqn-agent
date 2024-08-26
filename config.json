@@ -1,0 +1,18 @@
+{
+    "ENV": {
+        "NUM_BS": 4,
+        "NUM_UE": 12,
+        "INTERVAL": 2
+    },
+    "SDL":{
+        "NAMESPACE": "ns-o-ran"
+    },
+    "RC":{
+        "RC_XAPP_IP": "10.244.0.62",
+        "RC_XAPP_PORT": "7777"
+    },
+    "DT":{
+        "ENABLE": "False",
+        "NUM_DT": 0
+    }
+}

@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "dqnagent"
+version = "0.1.0"
+description = "DQN Agent"
+authors = ["mahdisabour <msabour.official@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+keras = "^3.5.0"
+tqdm = "^4.66.5"
+pillow = "^10.4.0"
+opencv-python = "^4.10.0.84"
+gymnasium = "^0.29.1"
+torch = "^2.4.0"
+matplotlib = "^3.9.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
