@@ -1,7 +1,11 @@
-from abc import ABC, abstractmethod
+import gymnasium as gym
 
-class Environment(ABC):
-    @abstractmethod
+from src.utils.config import Config
+
+class Environment(gym.Env):
+    def __init__(self, config: Config):
+        ...
+
     def reset(self):
         """
         Resets the environment to the initial state.
@@ -9,7 +13,6 @@ class Environment(ABC):
         """
         pass
 
-    @abstractmethod
     def step(self, action):
         """
         Executes the given action in the environment.
@@ -21,21 +24,18 @@ class Environment(ABC):
         """
         pass
 
-    @abstractmethod
     def render(self):
         """
         Renders the environment (for visualization).
         """
         pass
 
-    @abstractmethod
     def action_space(self):
         """
         Returns the action space of the environment.
         """
         pass
 
-    @abstractmethod
     def observation_space(self):
         """
         Returns the observation space of the environment.

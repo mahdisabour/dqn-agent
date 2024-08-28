@@ -10,6 +10,7 @@ class EnvironmentConfig:
 @dataclass
 class SDLConfig:
     NAMESPACE: str
+    MODE: str
 
 @dataclass
 class RCConfig:
@@ -24,17 +25,17 @@ class DTConfig:
 @dataclass
 class Config:
     environment: EnvironmentConfig
-    sdl: SDLConfig
+    SDL: SDLConfig
     RC: RCConfig
     DT: DTConfig
 
 
-def get_config(path: str) -> Config:
+def get_config(path: str = "./config.json") -> Config:
     with open(path, "r") as file:
         config_dict = json.load(file)
     return Config(
         environment=EnvironmentConfig(**config_dict['ENV']),
-        sdl=SDLConfig(**config_dict['SDL']),
+        SDL=SDLConfig(**config_dict['SDL']),
         RC=RCConfig(**config_dict['RC']),
         DT=DTConfig(**config_dict['DT'])
     )

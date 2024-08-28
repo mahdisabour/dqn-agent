@@ -5,7 +5,8 @@
         "INTERVAL": 2
     },
     "SDL":{
-        "NAMESPACE": "ns-o-ran"
+        "NAMESPACE": "ns-o-ran",
+        "MODE": "TEST"
     },
     "RC":{
         "RC_XAPP_IP": "10.244.0.62",
