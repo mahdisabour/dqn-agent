@@ -1,11 +1,22 @@
+import logging
+
 import gymnasium as gym
 
 from src.agent import DQNAgent
 from src.utils.plot_result import plot_durations
+from src.environment import NsOranEnv
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('ts-xapp.log'),
+        logging.StreamHandler()
+    ]
+)
 
 def main():
-    env = gym.make("CartPole-v1")
+    env = NsOranEnv()
     agent = DQNAgent(env=env)
     agent.learn()
     plot_durations(

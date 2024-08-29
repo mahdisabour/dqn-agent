@@ -15,7 +15,7 @@ from src.utils.config import get_config
 logger = logging.getLogger(__name__)
 
 
-class NsoranEnv(gym.Env):
+class NsOranEnv(gym.Env):
     """
     Ns-O-RAN Environment that follows gym interface
     
@@ -23,7 +23,7 @@ class NsoranEnv(gym.Env):
     
     """
     def __init__(self, ue_id: str):
-        super(NsoranEnv, self).__init__()
+        super(NsOranEnv, self).__init__()
 
         config = get_config()
 
