@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 
 def main():
-    env = NsOranEnv()
+    env = NsOranEnv(ue_id=2)
     agent = DQNAgent(env=env)
     agent.learn()
     plot_durations(
