@@ -6,7 +6,7 @@ def generate_mock_data():
     ue_id = random.choice(range(12)) + 1
     timestamp = int(time.time())
     def _create_data_helper(_range: int):
-        entry = f"{timestamp}," + f"{ue_id}," + ",".join([str(random.randint(1, 20)) for _ in range(_range)])
+        entry = f"{timestamp}," + f"{ue_id}," + ",".join([str(random.choice([2, 3, 4, 5])) for _ in range(_range)])
         return entry.encode()
 
     return {

@@ -111,7 +111,7 @@ def get_next_obs(
     last_cucp_key = max(f_cucp_keys, key=lambda key: int(key.split(",")[1]))
 
     # remove specific keys 
-    sdl_manager.remove(set(f_du_keys + f_cucp_keys, f_cucp_keys))
+    sdl_manager.remove(set(f_du_keys + f_cucp_keys + f_cucp_keys))
 
     return (
         du_dict[last_du_key].decode().split(","), 
