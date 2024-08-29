@@ -73,14 +73,14 @@ class RealSDLManager(SDLManagerABC):
         self._try_func_return(lambda: self.SDL.remove(self.namespace, keys))
 
 
-def get_sdl_manager() -> RealSDLManager | MockSDLManager:
+def get_sdl_manager(namespace: str = "ns-o-ran") -> RealSDLManager | MockSDLManager:
     """
         Handle SDL running mode
     """
     config = get_config()
     if config.SDL.MODE == "TEST": 
-        return MockSDLManager()
-    return RealSDLManager()
+        return MockSDLManager(namespace=namespace)
+    return RealSDLManager(namespace=namespace)
 
 
 @retry(max_retries=30, wait_time=1)

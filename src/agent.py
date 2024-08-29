@@ -9,7 +9,7 @@ import torch.optim as optim
 import matplotlib
 import matplotlib.pyplot as plt
 
-from src.environment import Environment
+from src.environment import NsOranEnv
 from src.model import DQN
 from src.memory import ReplayMemory
 from src.transition import Transition
@@ -38,7 +38,7 @@ device = torch.device(
 
 
 class DQNAgent:
-    def __init__(self, env: Environment):
+    def __init__(self, env: NsOranEnv):
         self.env = env 
         # Get number of actions from gym action space
         n_actions = env.action_space.n

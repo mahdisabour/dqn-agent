@@ -32,8 +32,7 @@ class NsOranEnv(gym.Env):
         self.ue_id = ue_id
 
         namespace = config.SDL.NAMESPACE
-        sdl_manager = get_sdl_manager()
-        self.SDL = sdl_manager(namespace=namespace)
+        self.SDL = get_sdl_manager(namespace=namespace)
 
         self.action_space = spaces.Discrete(self.num_bs+1)
         self.observation_space = spaces.Box(low=-np.inf, high=+np.inf, shape=((self.num_bs*7)+4,), dtype=np.float32)
