@@ -24,7 +24,7 @@ class DTConfig:
 
 @dataclass
 class Config:
-    environment: EnvironmentConfig
+    ENV: EnvironmentConfig
     SDL: SDLConfig
     RC: RCConfig
     DT: DTConfig
@@ -34,7 +34,7 @@ def get_config(path: str = "./config.json") -> Config:
     with open(path, "r") as file:
         config_dict = json.load(file)
     return Config(
-        environment=EnvironmentConfig(**config_dict['ENV']),
+        ENV=EnvironmentConfig(**config_dict['ENV']),
         SDL=SDLConfig(**config_dict['SDL']),
         RC=RCConfig(**config_dict['RC']),
         DT=DTConfig(**config_dict['DT'])

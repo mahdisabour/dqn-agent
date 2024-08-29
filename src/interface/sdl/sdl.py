@@ -39,7 +39,7 @@ class SDLManagerABC(ABC):
         ...
     
     @abstractmethod
-    def remove_all(self):
+    def remove(self, keys: set[str]):
         ...
         
 
@@ -56,8 +56,8 @@ class MockSDLManager(SDLManagerABC):
         result = {k: v for k, v in self.sdl.items() if k.startswith(prefix)}
         return result
 
-    def remove_all(self):
-        self.sdl = {}
+    def remove(self, keys: set[str]):
+        self.sdl = {k: v for k, v in self.sdl.items() if k not in keys}
 
 
 class RealSDLManager(SDLManagerABC):
@@ -69,8 +69,8 @@ class RealSDLManager(SDLManagerABC):
         ret_key_values = self._try_func_return(lambda: self.SDL.find_and_get(self.namespace, prefix))
         return ret_key_values
 
-    def remove_all(self):
-        self._try_func_return(lambda: self.SDL.remove_all(self.namespace))
+    def remove(self, keys: set[str]):
+        self._try_func_return(lambda: self.SDL.remove(self.namespace, keys))
 
 
 def get_sdl_manager() -> RealSDLManager | MockSDLManager:
@@ -86,7 +86,7 @@ def get_sdl_manager() -> RealSDLManager | MockSDLManager:
 @retry(max_retries=30, wait_time=1)
 def get_next_obs(
         sdl_manager: RealSDLManager | MockSDLManager, ue_id: str
-    ) -> tuple[tuple, int]:
+    ) -> tuple[list[str]]:
     """
         Handling get last observation in sdl
     """
@@ -110,13 +110,13 @@ def get_next_obs(
     last_cuup_key = max(f_cuup_keys, key=lambda key: int(key.split(",")[1]))
     last_cucp_key = max(f_cucp_keys, key=lambda key: int(key.split(",")[1]))
 
-    # remove all keys
-    sdl_manager.remove_all()
+    # remove specific keys 
+    sdl_manager.remove(set(f_du_keys + f_cucp_keys, f_cucp_keys))
 
     return (
-        du_dict[last_du_key], 
-        cuup_dict[last_cuup_key], 
-        cucp_dict[last_cucp_key]
+        du_dict[last_du_key].decode().split(","), 
+        cuup_dict[last_cuup_key].decode().split(","), 
+        cucp_dict[last_cucp_key].decode().split(",")
     )
 
 
