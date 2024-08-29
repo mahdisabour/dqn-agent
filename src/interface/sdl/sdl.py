@@ -1,4 +1,5 @@
 import time
+import random
 import logging
 from abc import abstractmethod, ABC
 
@@ -7,6 +8,8 @@ from ricsdl.exceptions import RejectedByBackend, NotConnected, BackendError
 
 from src.utils.config import get_config
 from src.utils.decorator import retry
+from src.interface.sdl.helper import generate_mock_data
+
 
 logger = logging.getLogger(__name__)
 
@@ -32,17 +35,9 @@ class SDLManagerABC(ABC):
         self.namespace = namespace
 
     @abstractmethod
-    def find_keys(self, prefix: str) -> list[str]:
-        ...
-
-    @abstractmethod
     def find_get_keys(self, prefix: str) -> dict[str, bytes]:
         ...
     
-    @abstractmethod
-    def remove(self, key: str | set[str]):
-        ...
-
     @abstractmethod
     def remove_all(self):
         ...
@@ -51,25 +46,22 @@ class SDLManagerABC(ABC):
 class MockSDLManager(SDLManagerABC):
     def __init__(self, namespace: str = "ns-o-ran"):
         self.namespace = namespace
-
-    def find_keys(self, prefix: str) -> list[str]:
-        ...
+        self.sdl = {}
 
     def find_get_keys(self, prefix: str) -> dict[str, bytes]:
-        ...
-    
-    def remove(self, key: str | set[str]):
-        ...
+        thr = 0.5
+        if random.random() > thr:
+            self.sdl.update(generate_mock_data())
+        return {k: v for k, v in self.sdl.items() if k.startswith(prefix)}
 
-    def get_next_obs(self) -> tuple[list[str]]:
-        ...
+    def remove_all(self):
+        self.sdl = {}
 
 
 class RealSDLManager(SDLManagerABC):
     def __init__(self, namespace: str = "ns-o-ran"):
         self.namespace = namespace
         self.SDL = _try_func_return(SyncStorage)
-        self.last_ts = 0
 
     def find_get_keys(self, prefix: str) -> dict[str, bytes]:
         ret_key_values = self._try_func_return(lambda: self.SDL.find_and_get(self.namespace, prefix))
@@ -78,35 +70,6 @@ class RealSDLManager(SDLManagerABC):
     def remove_all(self):
         self._try_func_return(lambda: self.SDL.remove_all(self.namespace))
 
-    @retry(max_retries=30, wait_time=1)
-    def get_next_obs(self, ue_id: str):
-        du_dict = self.find_get_keys("du-cell-*")
-        cuup_dict = self.find_get_keys("cu-up-cell-*")
-        cucp_dict = self.find_get_keys("cu-cp-cell-*")
-        
-        # Filter function to get specific ue and new data 
-        def _filter_keys(key: str):
-            return True if int(key.split(',')[1]) > self.last_ts and key.split(",")[-1] == ue_id  else False
-        
-        f_du_keys = list(filter(_filter_keys, du_dict.keys()))
-        f_cuup_keys = list(filter(_filter_keys, cuup_dict.keys()))
-        f_cucp_keys = list(filter(_filter_keys, cucp_dict.keys()))
-
-        if not (f_du_keys or f_cucp_keys or f_cuup_keys):
-            logger.info("Environment not ready")
-            raise Exception("Environment not ready")
-
-        last_du_key = max(f_du_keys, key=lambda key: int(key.split(",")[1]))
-        last_cuup_key = max(f_cuup_keys, key=lambda key: int(key.split(",")[1]))
-        last_cucp_key = max(f_cucp_keys, key=lambda key: int(key.split(",")[1]))
-
-        self.last_ts = int(last_du_key.split(",")[1])
-
-        # remove unused keys
-        self.remove_all()
-
-        return du_dict[last_du_key], cuup_dict[last_cuup_key], cucp_dict[last_cucp_key]
-        
 
 def get_sdl_manager() -> RealSDLManager | MockSDLManager:
     """
@@ -116,3 +79,40 @@ def get_sdl_manager() -> RealSDLManager | MockSDLManager:
     if config.SDL.MODE == "TEST": 
         return MockSDLManager()
     return RealSDLManager()
+
+
+@retry(max_retries=30, wait_time=1)
+def get_next_obs(
+        sdl_manager: RealSDLManager | MockSDLManager, ue_id: str
+    ) -> tuple[tuple, int]:
+    """
+        Handling get last observation in sdl
+    """
+    du_dict = sdl_manager.find_get_keys("du-cell-*")
+    cuup_dict = sdl_manager.find_get_keys("cu-up-cell-*")
+    cucp_dict = sdl_manager.find_get_keys("cu-cp-cell-*")
+    
+    # Filter function to get specific ue
+    def _filter_keys(key: str):
+        return True if key.split(",")[-1] == ue_id  else False
+    
+    f_du_keys = list(filter(_filter_keys, du_dict.keys()))
+    f_cuup_keys = list(filter(_filter_keys, cuup_dict.keys()))
+    f_cucp_keys = list(filter(_filter_keys, cucp_dict.keys()))
+
+    if not (f_du_keys and f_cucp_keys and f_cuup_keys):
+        logger.warn("Environment not ready")
+        raise Exception("Environment not ready")
+
+    last_du_key = max(f_du_keys, key=lambda key: int(key.split(",")[1]))
+    last_cuup_key = max(f_cuup_keys, key=lambda key: int(key.split(",")[1]))
+    last_cucp_key = max(f_cucp_keys, key=lambda key: int(key.split(",")[1]))
+
+    # remove all keys
+    sdl_manager.remove_all()
+
+    return (
+        du_dict[last_du_key], 
+        cuup_dict[last_cuup_key], 
+        cucp_dict[last_cucp_key]
+    )
