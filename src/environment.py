@@ -91,9 +91,11 @@ class NsoranEnv(gym.Env):
         self._prepare_state(du_obs, cuup, cucp)
         reward = -20 if wrong_action else self._calculate_reward()
 
-        if self.episode%10 == 0:
+        terminated = False
+        if self.episode % 10 == 0:
             self.save()
-        return self.state.to_numpy(dtype=np.float32).reshape(self.observation_space.shape), reward, False, False, {}
+            terminated = True
+        return self.state.to_numpy(dtype=np.float32).reshape(self.observation_space.shape), reward, terminated, False, {}
 
     def _prepare_state(self, du_obs: list[str], cuup: list[str], cucp: list[str]) -> None:
         columns = [ 
