@@ -49,10 +49,12 @@ class MockSDLManager(SDLManagerABC):
         self.sdl = {}
 
     def find_get_keys(self, prefix: str) -> dict[str, bytes]:
+        prefix = prefix.replace("*", "")
         thr = 0.5
-        if random.random() > thr:
+        if random.random() > thr and prefix == "du-cell-":
             self.sdl.update(generate_mock_data())
-        return {k: v for k, v in self.sdl.items() if k.startswith(prefix)}
+        result = {k: v for k, v in self.sdl.items() if k.startswith(prefix)}
+        return result
 
     def remove_all(self):
         self.sdl = {}
@@ -94,14 +96,14 @@ def get_next_obs(
     
     # Filter function to get specific ue
     def _filter_keys(key: str):
-        return True if key.split(",")[-1] == ue_id  else False
+        return True if int(key.split(",")[-1]) == ue_id  else False
     
     f_du_keys = list(filter(_filter_keys, du_dict.keys()))
     f_cuup_keys = list(filter(_filter_keys, cuup_dict.keys()))
     f_cucp_keys = list(filter(_filter_keys, cucp_dict.keys()))
 
     if not (f_du_keys and f_cucp_keys and f_cuup_keys):
-        logger.warn("Environment not ready")
+        logger.warning("Environment not ready")
         raise Exception("Environment not ready")
 
     last_du_key = max(f_du_keys, key=lambda key: int(key.split(",")[1]))
@@ -116,3 +118,9 @@ def get_next_obs(
         cuup_dict[last_cuup_key], 
         cucp_dict[last_cucp_key]
     )
+
+
+if __name__ == "__main__":
+    sdl_manager = get_sdl_manager()
+    next_obs = get_next_obs(sdl_manager, 1)
+    
