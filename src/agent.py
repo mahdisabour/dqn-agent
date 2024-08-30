@@ -17,7 +17,6 @@ from src.utils.plot_result import plot_durations
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
 
 
 BATCH_SIZE = 128

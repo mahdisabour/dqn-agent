@@ -1,9 +1,13 @@
 import matplotlib.pyplot as plt
 import torch
 
+from src.utils.config import get_config
 
 def plot_durations(episode_durations: list, complete: bool = False, 
                    save_path: str = "result.jpg") -> None:
+    if not get_config().AGENT.PLOT:
+        return 
+    
     plt.figure(1)
     durations_t = torch.tensor(episode_durations, dtype=torch.float)
     plt.title('Result')

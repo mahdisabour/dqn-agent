@@ -103,8 +103,8 @@ def get_next_obs(
     f_cucp_keys = list(filter(_filter_keys, cucp_dict.keys()))
 
     if not (f_du_keys and f_cucp_keys and f_cuup_keys):
-        logger.warning("Environment not ready")
-        raise Exception("Environment not ready")
+        logger.warning(f"Environment not ready for UE={ue_id}")
+        raise Exception(f"Environment not ready for UE={ue_id}")
 
     last_du_key = max(f_du_keys, key=lambda key: int(key.split(",")[1]))
     last_cuup_key = max(f_cuup_keys, key=lambda key: int(key.split(",")[1]))
