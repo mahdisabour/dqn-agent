@@ -1,3 +1,4 @@
+from typing import Any
 import logging
 import random
 import math
@@ -6,14 +7,14 @@ from itertools import count
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import matplotlib
-import matplotlib.pyplot as plt
+import numpy as np
 
 from src.environment import NsOranEnv
 from src.model import DQN
 from src.memory import ReplayMemory
 from src.transition import Transition
 from src.utils.plot_result import plot_durations
+from src.utils.concurrent import run_in_parallel
 
 
 logger = logging.getLogger(__name__)
@@ -37,14 +38,12 @@ device = torch.device(
 
 
 class DQNAgent:
-    def __init__(self, env: NsOranEnv):
-        self.env = env 
+    def __init__(self, envs: list[NsOranEnv]):
+        self.envs = envs 
         # Get number of actions from gym action space
-        n_actions = env.action_space.n
+        n_actions = envs[0].action_space.n
         # Get the number of state observations
-        state, info = env.reset()
-        logger.info(f"{info=}")
-        n_observations = len(state)
+        n_observations = envs[0].n_observation_space
 
         # load models
         self.policy_net = DQN(n_observations, n_actions).to(device)
@@ -125,26 +124,25 @@ class DQNAgent:
     def learn(self):
         for i_episode in range(self.num_episodes):
             logger.info(f"{i_episode=}")
-            # Initialize the environment and get its state
-            state, info = self.env.reset()
-            state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+
+            # Initialize all environments and get states
+            results: list[tuple[np.ndarray, dict]] = run_in_parallel([env.reset() for env in self.envs])
+            states_mapper = {i: torch.tensor(result[0], dtype=torch.float32, device=device).unsqueeze(0)
+                             for i, result in enumerate(results) if result}
             for t in count():
+                new_states_mapper = {}
                 logger.info(f"{i_episode=} -> {t}")
-                action = self.select_action(state)
-                observation, reward, terminated, truncated, _ = self.env.step(action.item())
-                reward = torch.tensor([reward], device=device)
-                done = terminated or truncated
 
-                if terminated:
-                    next_state = None
-                else:
-                    next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
+                self._agent_action_helper()
 
-                # Store the transition in memory
-                self.memory.push(state, action, next_state, reward)
-
-                # Move to the next state
-                state = next_state
+                args = [(self.envs[i], state) for i, state in states_mapper.itmes()]
+                results = run_in_parallel(
+                    callables=[self._agent_action_helper for _ in range(states_mapper.keys()[-1])],
+                    args_list=args
+                )
+                for i, (n_env, _) in enumerate(states_mapper.items()):
+                    new_states_mapper.update({n_env: results[i]})
+                states_mapper = new_states_mapper
 
                 # Perform one step of the optimization (on the policy network)
                 self.optimize_model()
@@ -157,10 +155,24 @@ class DQNAgent:
                     target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
                 self.target_net.load_state_dict(target_net_state_dict)
 
-                if done:
-                    self.episode_durations.append(t + 1)
-                    plot_durations(self.episode_durations)
+                if not states_mapper: 
                     break
+
+    def _agent_action_helper(self, env: NsOranEnv, state: torch.Tensor) -> tuple[torch.Tensor, bool]:
+            action = self.select_action(state)
+            observation, reward, terminated, truncated, _ = env.step(action.item())
+            reward = torch.tensor([reward], device=device)
+            done = terminated or truncated
+
+            if terminated:
+                next_state = None
+            else:
+                next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
+
+            # Store the transition in memory
+            self.memory.push(state, action, next_state, reward)
+            return next_state, done
+
 
     
     
