@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 
 
 logger = logging.getLogger(__name__)

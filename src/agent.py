@@ -13,7 +13,6 @@ from src.environment import NsOranEnv
 from src.model import DQN
 from src.memory import ReplayMemory
 from src.transition import Transition
-from src.utils.plot_result import plot_durations
 from src.utils.concurrent import run_in_parallel
 
 
@@ -61,7 +60,7 @@ class DQNAgent:
         else:
             self.num_episodes = 500
     
-    def select_action(self, state: torch.Tensor) -> torch.Tensor:
+    def select_action(self, state: torch.Tensor, env: NsOranEnv) -> torch.Tensor:
         sample = random.random()
         eps_threshold = EPS_END + (EPS_START - EPS_END) * \
             math.exp(-1. * self.steps_done / EPS_DECAY)
@@ -73,7 +72,7 @@ class DQNAgent:
                 # found, so we pick action with the larger expected reward.
                 return self.policy_net(state).max(1).indices.view(1, 1)
         else:
-            return torch.tensor([[self.env.action_space.sample()]], device=device, dtype=torch.long)
+            return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
 
     def optimize_model(self):
         if len(self.memory) < BATCH_SIZE:
@@ -126,22 +125,22 @@ class DQNAgent:
             logger.info(f"{i_episode=}")
 
             # Initialize all environments and get states
-            results: list[tuple[np.ndarray, dict]] = run_in_parallel([env.reset() for env in self.envs])
+            results: list[tuple[np.ndarray, dict]] = run_in_parallel([env.reset for env in self.envs])
             states_mapper = {i: torch.tensor(result[0], dtype=torch.float32, device=device).unsqueeze(0)
                              for i, result in enumerate(results) if result}
             for t in count():
                 new_states_mapper = {}
                 logger.info(f"{i_episode=} -> {t}")
 
-                self._agent_action_helper()
-
-                args = [(self.envs[i], state) for i, state in states_mapper.itmes()]
+                # states_mapper = {1: _, 2: _, 5: _, 11: _}
+                args = [(self.envs[i], state,) for i, state in states_mapper.items()]
                 results = run_in_parallel(
-                    callables=[self._agent_action_helper for _ in range(states_mapper.keys()[-1])],
+                    callables=[self._agent_action_helper for _ in states_mapper.items()],
                     args_list=args
                 )
-                for i, (n_env, _) in enumerate(states_mapper.items()):
-                    new_states_mapper.update({n_env: results[i]})
+                for (next_state, _), (n_env, _) in zip(results, states_mapper.items()):
+                    if next_state != None: # if env is ready 
+                        new_states_mapper.update({n_env: next_state})
                 states_mapper = new_states_mapper
 
                 # Perform one step of the optimization (on the policy network)
@@ -159,7 +158,7 @@ class DQNAgent:
                     break
 
     def _agent_action_helper(self, env: NsOranEnv, state: torch.Tensor) -> tuple[torch.Tensor, bool]:
-            action = self.select_action(state)
+            action = self.select_action(state, env)
             observation, reward, terminated, truncated, _ = env.step(action.item())
             reward = torch.tensor([reward], device=device)
             done = terminated or truncated
