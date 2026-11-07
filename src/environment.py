@@ -35,6 +35,7 @@ class NsOranEnv(gym.Env):
         self.SDL = get_sdl_manager(namespace=namespace)
 
         self.action_space = spaces.Discrete(self.num_bs+1)
+        self.n_observation_space = self.num_bs*7 + 4
         self.observation_space = spaces.Box(low=-np.inf, high=+np.inf, shape=((self.num_bs*7)+4,), dtype=np.float32)
         
         self.state = None
@@ -52,7 +53,7 @@ class NsOranEnv(gym.Env):
         self.initial_cost = 1
         self.decay_constant = 0.1
 
-    def reset(self, seed=None) -> np.ndarray:
+    def reset(self, seed=None) -> tuple[np.ndarray, dict]:
         """Reset the state of the environment to an initial state"""
         try:
             du_obs, cuup, cucp = get_next_obs(self.SDL, self.ue_id)

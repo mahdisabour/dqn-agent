@@ -20,6 +20,6 @@
         "PLOT": false
     },
     "APP": {
-        "LOGLEVEL": "ERROR"
+        "LOGLEVEL": "INFO"
     }
 }
